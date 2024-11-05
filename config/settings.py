@@ -4,7 +4,9 @@ TRADING_CONFIG = {
     'default_limit': 365,
     'risk_percentage': 2,
     'stop_loss_multiplier': 2,
-    'take_profit_multiplier': 3
+    'take_profit_multiplier': 3,
+    'stop_loss_percentage': 0.02,       # قيمة افتراضية، 2% وقف الخسارة
+    'take_profit_percentage': 0.05
 }
 
 # Technical Analysis parameters
