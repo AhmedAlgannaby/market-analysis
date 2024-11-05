@@ -50,15 +50,14 @@ def get_available_symbols():
 def get_hot_cryptos(limit=5):
     """Get top cryptocurrencies by volume"""
     symbols = data_fetcher.get_available_pairs()
-    # This is a simplified version. In reality, you'd want to sort by actual volume
     return symbols[:limit]
 
-def fetch_and_analyze_data(symbol):
+def fetch_and_analyze_data(symbol, timeframe):
     """Fetch and analyze cryptocurrency data"""
-    # Fetch historical data
+    # Fetch historical data with the selected timeframe
     data = data_fetcher.fetch_ohlcv(
         symbol,
-        timeframe=TRADING_CONFIG['default_timeframe'],
+        timeframe=timeframe,  # استخدام الفريم المحدد
         limit=TRADING_CONFIG['default_limit']
     )
     
@@ -76,6 +75,7 @@ def fetch_and_analyze_data(symbol):
     analyzed_data = calculate_pivot_points(analyzed_data)
     
     return analyzed_data
+
 def generate_trading_signals(data):
     """Generate trading signals based on technical indicators"""
     signals = {
@@ -127,6 +127,8 @@ def generate_trading_signals(data):
         signals['take_profit'] = latest_close * (1 - TRADING_CONFIG['take_profit_percentage'])
 
     return signals
+
+
 def plot_technical_analysis(data, symbol):
     """Plot main technical analysis chart"""
     fig = make_subplots(rows=2, cols=1, shared_xaxes=True,
@@ -237,6 +239,30 @@ def plot_forecast(data, symbol, forecast_days=30):
             line=dict(color='blue')
         ))
 
+
+         # Plotting with candlestick chart for historical data
+        fig = make_subplots(rows=1, cols=1, shared_xaxes=True)
+
+        # Add historical candlestick chart
+        fig.add_trace(go.Candlestick(
+            x=forecast_data.index,
+            open=forecast_data['open'],
+            high=forecast_data['high'],
+            low=forecast_data['low'],
+            close=forecast_data['close'],
+            name='Historical Price'
+        ))
+
+
+         # Update layout
+        fig.update_layout(
+            title=f'{symbol} Price Forecast with Candlestick Data',
+            yaxis_title='Price',
+            xaxis_title='Date'
+        )
+
+        st.plotly_chart(fig)
+
         # Add forecast
         fig.add_trace(go.Scatter(
             x=forecast_df.index,
@@ -315,16 +341,9 @@ def plot_forecast(data, symbol, forecast_days=30):
 
     except Exception as e:
         st.error(f"Error generating forecast: {str(e)}")
-
-def calculate_forecast_confidence(forecast_df):
-    """Calculate forecast confidence based on the spread of confidence intervals"""
-    spread = (forecast_df['upper_bound'] - forecast_df['lower_bound']) / forecast_df['forecast']
-    confidence = 100 * (1 - spread.mean())
-    return max(min(confidence, 100), 0)  # Ensure confidence is between 0 and 100
-
-def display_trading_dashboard(symbol, forecast_days):
+def display_trading_dashboard(symbol, timeframe, forecast_days):
     """Display the main trading dashboard"""
-    data = fetch_and_analyze_data(symbol)
+    data = fetch_and_analyze_data(symbol, timeframe)
     if data is not None:
         # Create tabs for different charts
         tab1, tab2 = st.tabs(["Technical Analysis", "Price Forecast"])
@@ -375,8 +394,15 @@ def main():
         index=symbols.index('BTC/USDT') if 'BTC/USDT' in symbols else 0
     )
 
-    # Forecast period selection
-    forecast_days = st.sidebar.slider("Forecast Period (Days)", min_value=7, max_value=90, value=30, step=1)
+    # Timeframe selection
+    timeframe = st.sidebar.selectbox(
+        "اختر الفريم الزمني",
+        options=["1h", "30m", "15m", "5m", "1m"]  # قائمة بفريمات أصغر
+    )
+
+
+    # Customizable short forecast period in hours
+    forecast_hours = st.sidebar.slider("Forecast Period (Hours)", min_value=1, max_value=48, value=12, step=1)
 
     # Hot cryptocurrencies
     st.sidebar.subheader("Hot Cryptocurrencies")
@@ -384,8 +410,8 @@ def main():
     for crypto in hot_cryptos:
         st.sidebar.write(crypto)
 
-    # Display trading dashboard
-    display_trading_dashboard(selected_symbol, forecast_days)
+    # Display trading dashboard with selected timeframe
+    display_trading_dashboard(selected_symbol, timeframe, forecast_hours)
 
 if __name__ == "__main__":
     main()
