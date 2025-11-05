@@ -14,4 +14,5 @@ Advanced cryptocurrency trading bot with technical analysis, backtesting, and re
 ## Installation
 1. Clone the repository
 ```bash
-git clone https://github.com/yourusername/crypto-trading-bot.git
+
+git clone https://github.com/AhmedAlgannaby/crypto-trading-bot.git
